@@ -9,7 +9,7 @@ abstract class Table
 
 	public static function getOne($id)
 	{
-		$link = mysqli_connect('localhost', 'root', '', 'cinema');
+		$link = mysqli_connect('localhost', 'root', 'root', 'cinema');
 
 		$query = 'select * from '.static::$tableName.' where '.static::$primaryKey.'='.$id;
 		$res = mysqli_query($link, $query);
@@ -21,7 +21,7 @@ abstract class Table
 
 	public static function getAll()
 	{
-		$link = mysqli_connect('localhost', 'root', '', 'cinema');
+		$link = mysqli_connect('localhost', 'root', 'root', 'cinema');
 
 		$query = 'select * from '.static::$tableName;
 		$res = mysqli_query($link, $query);
@@ -37,7 +37,7 @@ abstract class Table
 
 	public function save() 
 	{
-		$link = mysqli_connect('localhost', 'root', '', 'cinema');
+		$link = mysqli_connect('localhost', 'root', 'root', 'cinema');
 		$query = '';
 
 		$reflect = new ReflectionClass($this);
