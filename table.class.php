@@ -79,6 +79,15 @@ abstract class Table
 			$this->{static::$primaryKey} = $pk_val;
 		}
 	}
+
+	public function hydrate()
+	{
+		$data = static::getOne($this->{static::$primaryKey});
+		foreach ($data as $key => $value)
+		{
+			$this->$key = $value;
+		}
+	}
 }
 
 class Film extends Table
