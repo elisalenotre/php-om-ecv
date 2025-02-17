@@ -35,50 +35,50 @@ abstract class Table
 		return $lines;
 	}
 
-	public function save() 
-	{
-		$link = mysqli_connect('localhost', 'root', 'root', 'cinema');
-		$query = '';
+	// public function save() 
+	// {
+	// 	$link = mysqli_connect('localhost', 'root', 'root', 'cinema');
+	// 	$query = '';
 
-		$reflect = new ReflectionClass($this);
-		$props = $reflect->getProperties(ReflectionProperty::IS_PUBLIC);
+	// 	$reflect = new ReflectionClass($this);
+	// 	$props = $reflect->getProperties(ReflectionProperty::IS_PUBLIC);
 
-		if (isset($this->{static::$primaryKey}))
-		{
-			$query .= 'UPDATE '.static::$tableName.' SET ';
-			foreach ($props as $prop)
-			{
-				if ($prop->name != static::$primaryKey)
-				{
-					$query .= $prop->name.' =\''.$this->{$prop->name}.'\', ';
-				}
-			}
-			$query = substr($query, 0, -2);
-			$query .= ' WHERE '.static::$primaryKey.' = '.$this->{static::$primaryKey};
-			echo $query.'<br>';
-			$res = mysqli_query($link, $query);
-		}
-		else // sinon on genere une requete INSERT et on recupere l'id auto-incrémenté
-		{
-			$query .= 'INSERT INTO '.static::$tableName.' (';
-			foreach ($props as $prop)
-			{
-				$query .= $prop->name.', ';
-			}
-			$query = substr($query, 0, -2);
-			$query .= ') VALUES (';
-			foreach ($props as $prop)
-			{
-				$query .= '\''.$this->{$prop->name}.'\', ';
-			}
-			$query = substr($query, 0, -2);
-			$query .= ')';
-			$res = mysqli_query($link, $query);
-			echo $query.'<br>';
-			$pk_val = mysqli_insert_id($link);
-			$this->{static::$primaryKey} = $pk_val;
-		}
-	}
+	// 	if (isset($this->{static::$primaryKey}))
+	// 	{
+	// 		$query .= 'UPDATE '.static::$tableName.' SET ';
+	// 		foreach ($props as $prop)
+	// 		{
+	// 			if ($prop->name != static::$primaryKey)
+	// 			{
+	// 				$query .= $prop->name.' =\''.$this->{$prop->name}.'\', ';
+	// 			}
+	// 		}
+	// 		$query = substr($query, 0, -2);
+	// 		$query .= ' WHERE '.static::$primaryKey.' = '.$this->{static::$primaryKey};
+	// 		echo $query.'<br>';
+	// 		$res = mysqli_query($link, $query);
+	// 	}
+	// 	else // sinon on genere une requete INSERT et on recupere l'id auto-incrémenté
+	// 	{
+	// 		$query .= 'INSERT INTO '.static::$tableName.' (';
+	// 		foreach ($props as $prop)
+	// 		{
+	// 			$query .= $prop->name.', ';
+	// 		}
+	// 		$query = substr($query, 0, -2);
+	// 		$query .= ') VALUES (';
+	// 		foreach ($props as $prop)
+	// 		{
+	// 			$query .= '\''.$this->{$prop->name}.'\', ';
+	// 		}
+	// 		$query = substr($query, 0, -2);
+	// 		$query .= ')';
+	// 		$res = mysqli_query($link, $query);
+	// 		echo $query.'<br>';
+	// 		$pk_val = mysqli_insert_id($link);
+	// 		$this->{static::$primaryKey} = $pk_val;
+	// 	}
+	// }
 
 	public function hydrate()
 	{
@@ -128,7 +128,10 @@ class Film extends Table
 		$line = mysqli_fetch_assoc($res);
 
 		return $line;
-	}*/
+	}
+
+
+	HYDRATE SPECIFIQUE POUR LE FILM
 
 	public function hydrate()
 	{
@@ -137,7 +140,7 @@ class Film extends Table
 		{
 			$this->$key = $value;
 		}
-	}
+	}*/
 }
 
 class Genre extends Table
@@ -150,11 +153,11 @@ class Genre extends Table
 
 	}
 
-/* FONCTION SAVE SPECIFIQUE POUR LE GENRE
+// FONCTION SAVE SPECIFIQUE POUR LE GENRE
 
 	public function save() 
 	{
-		$link = mysqli_connect('localhost', 'root', '', 'cinema');
+		$link = mysqli_connect('localhost', 'root', 'root', 'cinema');
 		$query = '';
 
 		if (isset($this->id_genre))
@@ -171,7 +174,7 @@ class Genre extends Table
 			$pk_val = mysqli_insert_id($link);
 			$this->id_genre = $pk_val;
 		}
-	}*/
+	}
 }
 
 class Distributeur extends Table
