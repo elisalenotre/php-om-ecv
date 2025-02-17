@@ -34,6 +34,15 @@ abstract class Table
 
 		return $lines;
 	}
+
+	public function hydrate()
+    {
+        $data = static::getOne($this->{static::$primaryKey});
+        foreach ($data as $key => $value)
+        {
+            $this->$key = $value;
+        }
+    }
 }
 
 class Film extends Table
@@ -74,7 +83,18 @@ class Film extends Table
 		$line = mysqli_fetch_assoc($res);
 
 		return $line;
-	}*/
+	}
+		
+HYDRATE SPECIFIQUE POUR LE FILM
+
+    public function hydrate()
+    {
+        $data = static::getOne($this->{static::$primaryKey});
+        foreach ($data as $key => $value)
+        {
+            $this->$key = $value;
+        }
+    }*/
 }
 
 class Genre extends Table
