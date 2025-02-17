@@ -9,7 +9,7 @@ abstract class Table
 
 	public static function getOne($id)
 	{
-		$link = mysqli_connect('localhost', 'root', '', 'cinema');
+		$link = mysqli_connect('localhost', '', '', 'cinema');
 
 		$query = 'select * from '.static::$tableName.' where '.static::$primaryKey.'='.$id;
 		$res = mysqli_query($link, $query);
@@ -21,7 +21,7 @@ abstract class Table
 
 	public static function getAll()
 	{
-		$link = mysqli_connect('localhost', 'root', '', 'cinema');
+		$link = mysqli_connect('localhost', 'root', 'root', 'cinema');
 
 		$query = 'select * from '.static::$tableName;
 		$res = mysqli_query($link, $query);
@@ -34,6 +34,51 @@ abstract class Table
 
 		return $lines;
 	}
+
+	public function getDataObject(): array
+    {
+        return array_diff_key(get_object_vars($this), get_class_vars(get_class()));
+    }
+
+
+
+	public function save() 
+	{
+		$link = mysqli_connect('localhost', 'root', '', 'cinema');
+		$query = '';
+		$data = $this->getDataObject();
+		unset($data['id']);
+
+		if ($this->getId())
+		{
+			$query = 'update '. $this->tableName . " set ";
+            foreach ($data as $column => $value) {
+                $query .= $column . "=:" . $column . ",";
+            }
+            $query = substr($query, 0, -1);
+            $query .= " where id = " . $this->getId();			
+			echo $query.'<br>';
+			$res = mysqli_query($link, $query);
+		}
+		else // sinon on genere une requete INSERT et on recupere l'id auto-incrémenté
+		{
+			$query .= 'insert into '.static::$tableName . "(" . implode(",", array_keys($data)) . ") values (:" . implode(",:", array_keys($data)) . ")";
+			$res = mysqli_query($link, $query);
+			echo $query.'<br>';
+			$pk_val = mysqli_insert_id($link);
+			//$this->array_keys($data)= $pk_val;
+		}
+		if (!empty($this->getId()));
+
+	}
+
+	//
+
+			
+      
+
+       // $queryPrepared = $this->pdo->prepare($sql);
+       // $queryPrepared->execute($data);
 }
 
 class Film extends Table
@@ -41,40 +86,29 @@ class Film extends Table
 	public static $primaryKey = 'id_film';
 	public static $tableName = 'films';
 
+	public int $id = 0;
+    public int $id_genre = 0;
+    public int $id_distributeur = 0;
+    public string $titre = "";
+    public string $resum = "";
+    public int $duree_minutes = 0;
+    public int $annee_production = 0;
+    public \DateTime $date_debut_affiche;
+    public \DateTime $date_fin_affiche;
+
+
+
 	public function __construct()
 	{
+		$this->id = $id;
+        $this->id_genre = $id_genre;
+        $this->id_distributeur = $id_distributeur;
+        $this->titre = $titre;
+        $this->resum = $resum;
+        $this->duree_minutes = $duree_minutes;
+        $this->annee_production = $annee_production;
 
 	}
-
-/*	VERSION SPECIFIQUE POUR LE FILMS
-
-	public static function getAll()
-	{
-		$link = mysqli_connect('localhost', 'root', '', 'cinema');
-
-		$query = 'select * from films';
-		$res = mysqli_query($link, $query);
-
-		$lines = [];
-		while ($line = mysqli_fetch_assoc($res))
-		{
-			$lines[] = $line;
-		}
-
-		return $lines;
-	}
-
-	public static function getOne($id)
-	{
-		$link = mysqli_connect('localhost', 'root', '', 'cinema');
-
-		$query = 'select * from films where id_film='.$id;
-		$res = mysqli_query($link, $query);
-
-		$line = mysqli_fetch_assoc($res);
-
-		return $line;
-	}*/
 }
 
 class Genre extends Table
@@ -86,15 +120,16 @@ class Genre extends Table
 	{
 
 	}
+}
 
-	public function save() 
+	/*public function save() 
 	{
 		$link = mysqli_connect('localhost', 'root', '', 'cinema');
 		$query = '';
 
 		if (isset($this->id_genre))
 		{
-			$query .= 'UPDATE genres SET nom =\''.$this->nom.'\' WHERE id_genre = '.$this->id_genre;
+			$query .= 'UPDATE'. $tableName .'SET nom =\''.$this->nom.'\' WHERE'. $primary_key.' = '.$this->id_genre;
 			echo $query.'<br>';
 			$res = mysqli_query($link, $query);
 		}
@@ -107,7 +142,7 @@ class Genre extends Table
 			$this->id_genre = $pk_val;
 		}
 	}
-}
+}*/
 
 class Distributeur extends Table
 {
@@ -119,6 +154,7 @@ class Distributeur extends Table
 
 	}
 }
+
 
 
 // code de l'application
