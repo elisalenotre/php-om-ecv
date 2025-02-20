@@ -19,20 +19,32 @@ abstract class Table
 		return $line;
 	}
 
-	public static function getAll()
+	public static function getAll($limit = 10, $offset = 0)
 	{
 		$link = mysqli_connect('localhost', 'root', 'root', 'cinema');
-
-		$query = 'select * from '.static::$tableName;
+	
+		$query = 'SELECT * FROM '.static::$tableName.' LIMIT '.$limit.' OFFSET '.$offset;
 		$res = mysqli_query($link, $query);
-
+	
 		$lines = [];
 		while ($line = mysqli_fetch_assoc($res))
 		{
 			$lines[] = $line;
 		}
-
+	
 		return $lines;
+	}
+	
+	public static function countAll()
+	{
+		$link = mysqli_connect('localhost', 'root', 'root', 'cinema');
+	
+		$query = 'SELECT COUNT(*) as count FROM '.static::$tableName;
+		$res = mysqli_query($link, $query);
+	
+		$line = mysqli_fetch_assoc($res);
+	
+		return $line['count'];
 	}
 
 	public function save()
@@ -59,7 +71,7 @@ abstract class Table
 		else { 
 			//recupere la liste des noms de colonnes (nom, genre ect)
             $columns = implode(", ", array_keys($fields));
-			//recupere les valeurs a inserer (science fiction ect)
+			//recupere les valeurs a inserer (science fiction, heroic fantasy ect)
             $values = implode("', '", array_map(fn($v) => mysqli_real_escape_string($link, $v), array_values($fields))); 
             $query = "INSERT INTO ".static::$tableName." ($columns) VALUES ('$values')";
 
@@ -80,6 +92,16 @@ abstract class Table
             $this->$key = $value;
         }
     }
+
+	public function __get($name)
+    {
+		// si la methode existe, on l'appelle
+		// souvent utilisé dans des classes où les méthodes de type "getter" sont dynamiquement accessibles
+		// cela permet d'accéder à différentes propriétés de l'objet sans avoir à écrire explicitement chaque méthode d'accès
+        if (method_exists($this, 'get' . ucfirst($name))) {
+            return $this->{'get' . ucfirst($name)}();
+        }
+    }
 }
 
 class Film extends Table
@@ -97,40 +119,61 @@ class Film extends Table
 	public $id_distributeur;
 	public $id_genre;
 
-	public $distributeur;
-	public $genre;
+	private $distributeur;
+	private $genre;
 
 	public function __construct()
 	{
 
 	}
 
-// HYDRATE SPECIFIQUE POUR LE FILM AVEC HYDRATION EN CHAINE
+	// HYDRATE SPECIFIQUE POUR LE FILM AVEC HYDRATION EN CHAINE
 
-public function hydrate()
-{
-	// recupere les données du film avec getOne
-	$data = static::getOne($this->{static::$primaryKey});
-	// pour chaque donnée, on l'assigne à l'objet
-	foreach ($data as $key => $value)
+	public function hydrate()
 	{
-		$this->$key = $value;
+		// recupere les données du film avec getOne
+		$data = static::getOne($this->{static::$primaryKey});
+		// pour chaque donnée, on l'assigne à l'objet
+		foreach ($data as $key => $value)
+		{
+			$this->$key = $value;
+		}
+
+		// Hydrate le distributeur
+		if (isset($this->id_distributeur)) {
+			$this->distributeur = new Distributeur();
+			$this->distributeur->id_distributeur = $this->id_distributeur;
+			$this->distributeur->hydrate();
+		}
+
+		// Hydrate le genre
+		if (isset($this->id_genre)) {
+			$this->genre = new Genre();
+			$this->genre->id_genre = $this->id_genre;
+			$this->genre->hydrate();
+		}
 	}
 
-	// Hydrate le distributeur
-	if (isset($this->id_distributeur)) {
-		$this->distributeur = new Distributeur();
-		$this->distributeur->id_distributeur = $this->id_distributeur;
-		$this->distributeur->hydrate();
+	// GETTERS POUR LES RELATIONS DE FILM
+	public function getDistributeur()
+	{
+		if (!$this->distributeur == null && isset($this->id_distributeur)) {
+			$this->distributeur = new Distributeur();
+			$this->distributeur->id_distributeur = $this->id_distributeur;
+			$this->distributeur->hydrate();
+		}
+		return $this->distributeur;
 	}
 
-	// Hydrate le genre
-	if (isset($this->id_genre)) {
-		$this->genre = new Genre();
-		$this->genre->id_genre = $this->id_genre;
-		$this->genre->hydrate();
+	public function getGenre()
+	{
+		if (!$this->genre == null && isset($this->id_genre)) {
+			$this->genre = new Genre();
+			$this->genre->id_genre = $this->id_genre;
+			$this->genre->hydrate();
+		}
+		return $this->genre;
 	}
-}
 }
 
 class Genre extends Table
@@ -172,33 +215,64 @@ class Distributeur extends Table
 // CODE DE L'APPLICATION
 
 // liste de tous les films - homepage
-if (!isset($_GET['page']))
+if (!isset($_GET['page']) || $_GET['page'] == 'home')
 {
-	echo '<h1>Liste des films du cinéma</h1><br>';
-	$films = Film::getAll();
-	foreach ($films as $film)
-	{
-		echo '<a href="?page=film&id_film='.$film['id_film'].'">'.$film['titre'].'</a><br>';
-	}
+    $page = isset($_GET['p']) ? (int)$_GET['p'] : 1;
+    $limit = 20;
+    $offset = ($page - 1) * $limit;
+    $totalFilms = Film::countAll();
+    $totalPages = ceil($totalFilms / $limit);
 
+    echo '<h1 style="font-family: Arial, sans-serif; color: #333;">Liste des films du cinéma</h1><br>';
+    $films = Film::getAll($limit, $offset);
+    echo '<ul style="list-style-type: none; padding: 0;">';
+    foreach ($films as $film)
+    {
+        echo '<li style="margin-bottom: 10px;"><a href="?page=film&id_film='.$film['id_film'].'" style="text-decoration: none; color:rgb(6, 7, 34); font-size: 18px;">'.$film['titre'].'</a></li>';
+    }
+    echo '</ul>';
+
+	// affichage du select pour la pagination
+	echo '<div style="footer: 0; position: absolute; bottom: 30px; width: 100%; text-align: center;">';
+	echo '<label for="page-select" style="font-family: Arial, sans-serif; color: rgba(107, 107, 135, 0.46);">Choisir une page: </label>';
+	echo '<select id="page-select" onchange="location = this.value;" style="padding: 5px; font-family: Arial, sans-serif; color: rgba(107, 107, 135, 0.46);">';
+	for ($i = 1; $i <= $totalPages; $i++) {
+		$selected = ($i == $page) ? 'selected' : '';
+		echo '<option value="?page=home&p='.$i.'" '.$selected.'>'.$i.'</option>';
+	}
+	echo '</select>';
+	echo '</div>';
 }
 
 // détails d'un film
 elseif($_GET['page'] == 'film')
 {
-	$film = Film::getOne($_GET['id_film']);
+    $film = new Film();
+    $film->id_film = $_GET['id_film'];
+    $film->hydrate();
 
-	echo '<h1>Détails du film "'.$film['titre'].'"</h1><br>';
-	echo '<strong>id du film : </strong> '.$film['id_film'].'<br>';
-	echo '<strong>id du genre : </strong> '.$film['id_genre'].'<br>';
-	echo '<strong>id du distributeur : </strong> '.$film['id_distributeur'].'<br>';
-	echo '<strong>titre du film :</strong> : '.$film['titre'].'<br>';
-	echo '<strong>résumé du film :</strong> : '.$film['resum'].'<br>';
-	echo '<strong>date de début d\'affichage :</strong> '.$film['date_debut_affiche'].'<br>';
-	echo '<strong>date de fin d\'affichage : </strong> '.$film['date_fin_affiche'].'<br>';
-	echo '<strong>durée du film (minutes) : </strong> '.$film['duree_minutes'].'<br>';
-	echo '<strong>année de production : </strong> '.$film['annee_production'].'<br>';
+    echo '<h1>Détails du film "'.$film->titre.'"</h1><br>';
+    echo '<strong>id du film : </strong> '.$film->id_film.'<br>';
+    echo '<strong>id du genre : </strong> '.$film->id_genre.'<br>';
+    echo '<strong>id du distributeur : </strong> '.$film->id_distributeur.'<br>';
+    echo '<strong>titre du film :</strong> : '.$film->titre.'<br>';
+    echo '<strong>résumé du film :</strong> : '.$film->resum.'<br>';
+    echo '<strong>date de début d\'affichage :</strong> '.$film->date_debut_affiche.'<br>';
+    echo '<strong>date de fin d\'affichage : </strong> '.$film->date_fin_affiche.'<br>';
+    echo '<strong>durée du film (minutes) : </strong> '.$film->duree_minutes.'<br>';
+    echo '<strong>année de production : </strong> '.$film->annee_production.'<br>';
 
+    if ($film->genre) {
+        echo '<strong>nom du genre : </strong> '.$film->genre->nom.'<br>';
+    } else {
+        echo '<strong>nom du genre : </strong> Non défini<br>';
+    }
+
+    if ($film->distributeur) {
+        echo '<strong>nom du distributeur : </strong> '.$film->distributeur->nom.'<br>';
+    } else {
+        echo '<strong>nom du distributeur : </strong> Non défini<br>';
+    }
 }
 
 // liste de tous les genres
@@ -247,7 +321,7 @@ elseif($_GET['page'] == 'add_genre_raw_code')
 elseif($_GET['page'] == 'hydrate_film')
 {
 	$film = new Film;
-	$film->id_film = 3571;
+	$film->id_film = 1;
 	$film->hydrate();
 
 	echo '<pre>';
