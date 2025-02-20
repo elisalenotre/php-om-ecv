@@ -11,9 +11,15 @@ abstract class Table
 	{
 		$link = mysqli_connect('localhost', 'root', 'root', 'cinema');
 
-		$query = 'select * from '.static::$tableName.' where '.static::$primaryKey.'='.$id;
-		$res = mysqli_query($link, $query);
+		$query = ' SELECT films.*, genres.nom AS genre_nom, distributeurs.nom AS distributeurs_nom
+				   FROM films
+				   LEFT JOIN genres on films.id_genre = genres.id_genre
+				   LEFT JOIN distributeurs on films.id_distributeur = distributeurs.id_distributeur
+				   WHERE films.id_film = '.$id;
 
+		echo 'Requête SQL : '.$query.'<br>';
+		
+		$res = mysqli_query($link, $query);
 		$line = mysqli_fetch_assoc($res);
 
 		return $line;
@@ -96,6 +102,8 @@ class Film extends Table
 	public $annee_production;
 	public $id_distributeur;
 	public $id_genre;
+	public $genre_nom;
+	public $distributeurs_nom;
 
 	public $distributeur;
 	public $genre;
@@ -117,18 +125,20 @@ public function hydrate()
 		$this->$key = $value;
 	}
 
-	// Hydrate le distributeur
-	if (isset($this->id_distributeur)) {
+	// if (isset($this->id_distributeur)) {
+	// 	$this->distributeur = Distributeur::getOne($this->id_distributeur);
+	// }
+	if (isset($data['id_distributeur'])) {
 		$this->distributeur = new Distributeur();
-		$this->distributeur->id_distributeur = $this->id_distributeur;
-		$this->distributeur->hydrate();
+		$this->distributeur->nom = $data['id_distributeur'];
 	}
 
-	// Hydrate le genre
-	if (isset($this->id_genre)) {
+	// if (isset($this->id_genre)) {
+	// 	$this->genre = Genre::getOne($this->id_genre);
+	// }
+	if (isset($data['id_genre'])) {
 		$this->genre = new Genre();
-		$this->genre->id_genre = $this->id_genre;
-		$this->genre->hydrate();
+		$this->genre->nom = $data['id_genre'];
 	}
 }
 }
@@ -250,9 +260,9 @@ elseif($_GET['page'] == 'hydrate_film')
 	$film->id_film = 3571;
 	$film->hydrate();
 
-	echo '<pre>';
-	var_dump($film);
-	echo '</pre>';
+	echo 'Film: '. $film->titre.'<br>';
+	echo 'Distributeur: '. $film->distributeur->nom.'<br>';
+	echo 'Genre: '. $film->genre->nom.'<br>';
 }
 
 ?>
