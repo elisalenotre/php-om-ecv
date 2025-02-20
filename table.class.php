@@ -9,7 +9,7 @@ abstract class Table
 
 	public static function getOne($id)
 	{
-		$link = mysqli_connect('localhost', 'root', '', 'cinema');
+		$link = mysqli_connect('localhost', 'root', 'root', 'cinema');
 
 		$query = 'select * from '.static::$tableName.' where '.static::$primaryKey.'='.$id;
 		$res = mysqli_query($link, $query);
@@ -21,7 +21,7 @@ abstract class Table
 
 	public static function getAll()
 	{
-		$link = mysqli_connect('localhost', 'root', '', 'cinema');
+		$link = mysqli_connect('localhost', 'root', 'root', 'cinema');
 
 		$query = 'select * from '.static::$tableName;
 		$res = mysqli_query($link, $query);
@@ -77,6 +77,16 @@ class Film extends Table
 	public static $primaryKey = 'id_film';
 	public static $tableName = 'films';
 
+	public $id_film;
+	public $titre;
+	public $resum;
+	public $date_debut_affiche;
+	public $date_fin_affiche;
+	public $duree_minutes;
+	public $annee_production;
+	public $id_distributeur;
+	public $id_genre;
+
 	public function __construct()
 	{
 
@@ -129,6 +139,9 @@ class Genre extends Table
 	public static $primaryKey = 'id_genre';
 	public static $tableName = 'genres';
 
+	public $id_genre;
+	public $nom;
+
 	public function __construct()
 	{
 
@@ -136,7 +149,7 @@ class Genre extends Table
 
 	public function save() 
 	{
-		$link = mysqli_connect('localhost', 'root', '', 'cinema');
+		$link = mysqli_connect('localhost', 'root', 'root', 'cinema');
 		$query = '';
 
 		if (isset($this->id_genre))
@@ -214,8 +227,16 @@ elseif($_GET['page'] == 'add_genre_raw_code')
 	$genre->nom = 'heroic fantaisie';
 	$genre->save();
 
+	echo '<pre>';
+	var_dump($genre);
+	echo '</pre>';
+
 	$genre->nom = 'heroic fantaisy';
 	$genre->save();
+
+	echo '<pre>';
+	var_dump($genre);
+	echo '</pre>';
 }
 elseif($_GET['page'] == 'hydrate_film')
 {
