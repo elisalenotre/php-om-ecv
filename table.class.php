@@ -35,6 +35,33 @@ abstract class Table
 		return $lines;
 	}
 
+	public function save()
+    {
+        $link = mysqli_connect('localhost', 'root', 'root', 'cinema');
+        $query = '';
+
+        $fields = get_object_vars($this); // recup les proprietes de l'objet (id_film, titre ect)
+        unset($fields[static::$primaryKey]); //on retire la primaryKey car ne doit pas être modifiee lors d'un update et est generee automatiquement
+
+        if (isset($this->{static::$primaryKey})) { //verifie si l'objet a deja un id on fait update 
+            $setParts = []; //cree un tableau 
+            foreach ($fields as $field => $value) {
+                $setParts[] = "$field = '".mysqli_real_escape_string($link, $value)."'"; //evite les injections sql 
+            }
+            $query = "UPDATE ".static::$tableName." SET ".implode(", ", $setParts)." WHERE ".static::$primaryKey." = ".$this->{static::$primaryKey}; //on concatene
+        } else { // sinon on fait insert d'un nouvel enregistrement
+            $columns = implode(", ", array_keys($fields));//recupere la liste des noms de colonnes (nom, genre ect)
+            $values = implode("', '", array_map(fn($v) => mysqli_real_escape_string($link, $v), array_values($fields))); //recupere les valeurs a inserer (science fiction ect)
+            $query = "INSERT INTO ".static::$tableName." ($columns) VALUES ('$values')";
+
+            mysqli_query($link, $query);
+            $this->{static::$primaryKey} = mysqli_insert_id($link); // recup de l'id auto incremente 
+        }
+        echo $query;
+        mysqli_query($link, $query);
+        echo $query.'<br>';
+    }
+
 	public function hydrate()
     {
         $data = static::getOne($this->{static::$primaryKey});
