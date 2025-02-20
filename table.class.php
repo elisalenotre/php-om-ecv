@@ -87,6 +87,9 @@ class Film extends Table
 	public $id_distributeur;
 	public $id_genre;
 
+	public $distributeur;
+	public $genre;
+
 	public function __construct()
 	{
 
@@ -120,18 +123,31 @@ class Film extends Table
 		$line = mysqli_fetch_assoc($res);
 
 		return $line;
-	}
+	}*/
 		
-HYDRATE SPECIFIQUE POUR LE FILM
+// HYDRATE SPECIFIQUE POUR LE FILM
+public function hydrate()
+{
+	$data = static::getOne($this->{static::$primaryKey});
+	foreach ($data as $key => $value)
+	{
+		$this->$key = $value;
+	}
 
-    public function hydrate()
-    {
-        $data = static::getOne($this->{static::$primaryKey});
-        foreach ($data as $key => $value)
-        {
-            $this->$key = $value;
-        }
-    }*/
+	// Hydrate le distributor
+	if (isset($this->id_distributeur)) {
+		$this->distributeur = new Distributeur();
+		$this->distributeur->id_distributeur = $this->id_distributeur;
+		$this->distributeur->hydrate();
+	}
+
+	// Hydrate le genre
+	if (isset($this->id_genre)) {
+		$this->genre = new Genre();
+		$this->genre->id_genre = $this->id_genre;
+		$this->genre->hydrate();
+	}
+}
 }
 
 class Genre extends Table
@@ -173,6 +189,14 @@ class Distributeur extends Table
 {
 	public static $primaryKey = 'id_distributeur';
 	public static $tableName = 'distributeurs';
+
+	public $id_distributeur;
+	public $nom;
+	public $telephone;
+	public $adresse;
+	public $cpostal;
+	public $ville;
+	public $pays;
 
 	public function __construct()
 	{
