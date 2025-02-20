@@ -9,7 +9,7 @@ abstract class Table
 
 	public static function getOne($id)
 	{
-		$link = mysqli_connect('localhost', 'root', 'root', 'cinema');
+		$link = mysqli_connect('localhost:3307', 'root', '', 'cinema');
 
 		$query = 'select * from '.static::$tableName.' where '.static::$primaryKey.'='.$id;
 		$res = mysqli_query($link, $query);
@@ -21,7 +21,7 @@ abstract class Table
 
 	public static function getAll()
 	{
-		$link = mysqli_connect('localhost', 'root', 'root', 'cinema');
+		$link = mysqli_connect('localhost:3307', 'root', '', 'cinema');
 
 		$query = 'select * from '.static::$tableName;
 		$res = mysqli_query($link, $query);
@@ -37,7 +37,7 @@ abstract class Table
 
 	public function save()
     {
-        $link = mysqli_connect('localhost', 'root', 'root', 'cinema');
+        $link = mysqli_connect('localhost:3307', 'root', '', 'cinema');
         $query = '';
 
         $fields = get_object_vars($this); // recup les proprietes de l'objet (id_film, titre ect)
@@ -200,9 +200,17 @@ elseif($_GET['page'] == 'film')
 	$film = Film::getOne($_GET['id_film']);
 
 	echo '<h1>Détails du film "'.$film['titre'].'"</h1><br>';
-	echo '<pre>';
-	var_dump($film);
-	echo '</pre>';
+		
+	echo '<strong>id du film : </strong> '.$film['id_film'].'<br>';
+	echo '<strong>id du genre : </strong> '.$film['id_genre'].'<br>';
+	echo '<strong>id du distributeur : </strong> '.$film['id_distributeur'].'<br>';
+	echo '<strong>titre du film :</strong> : '.$film['titre'].'<br>';
+	echo '<strong>résumé du film :</strong> : '.$film['resum'].'<br>';
+	echo '<strong>date de début d\'affichage :</strong> '.$film['date_debut_affiche'].'<br>';
+	echo '<strong>date de fin d\'affichage : </strong> '.$film['date_fin_affiche'].'<br>';
+	echo '<strong>durée du film (minutes) : </strong> '.$film['duree_minutes'].'<br>';
+	echo '<strong>année de production : </strong> '.$film['annee_production'].'<br>';
+
 }
 elseif($_GET['page'] == 'genres')
 {
