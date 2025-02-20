@@ -40,22 +40,32 @@ abstract class Table
         $link = mysqli_connect('localhost:3307', 'root', '', 'cinema');
         $query = '';
 
-        $fields = get_object_vars($this); // recup les proprietes de l'objet (id_film, titre ect)
-        unset($fields[static::$primaryKey]); //on retire la primaryKey car ne doit pas être modifiee lors d'un update et est generee automatiquement
+		// recup les proprietes de l'objet (id_film, titre ect)
+        $fields = get_object_vars($this); 
+		//on retire la primaryKey car ne doit pas être modifiee lors d'un update et est generee automatiquement
+        unset($fields[static::$primaryKey]);
 
-        if (isset($this->{static::$primaryKey})) { //verifie si l'objet a deja un id on fait update 
+		//verifie si l'objet a deja un id on fait update 
+        if (isset($this->{static::$primaryKey})) { 
             $setParts = []; //cree un tableau 
             foreach ($fields as $field => $value) {
-                $setParts[] = "$field = '".mysqli_real_escape_string($link, $value)."'"; //evite les injections sql 
+				//evite les injections sql en echappant les caracteres speciaux (sécurité)
+                $setParts[] = "$field = '".mysqli_real_escape_string($link, $value)."'"; 
             }
             $query = "UPDATE ".static::$tableName." SET ".implode(", ", $setParts)." WHERE ".static::$primaryKey." = ".$this->{static::$primaryKey}; //on concatene
-        } else { // sinon on fait insert d'un nouvel enregistrement
-            $columns = implode(", ", array_keys($fields));//recupere la liste des noms de colonnes (nom, genre ect)
-            $values = implode("', '", array_map(fn($v) => mysqli_real_escape_string($link, $v), array_values($fields))); //recupere les valeurs a inserer (science fiction ect)
+        }
+
+		// sinon on fait insert d'un nouvel enregistrement
+		else { 
+			//recupere la liste des noms de colonnes (nom, genre ect)
+            $columns = implode(", ", array_keys($fields));
+			//recupere les valeurs a inserer (science fiction ect)
+            $values = implode("', '", array_map(fn($v) => mysqli_real_escape_string($link, $v), array_values($fields))); 
             $query = "INSERT INTO ".static::$tableName." ($columns) VALUES ('$values')";
 
             mysqli_query($link, $query);
-            $this->{static::$primaryKey} = mysqli_insert_id($link); // recup de l'id auto incremente 
+			// recup de l'id auto incremente et on l'assigne a l'objet
+            $this->{static::$primaryKey} = mysqli_insert_id($link); 
         }
         echo $query;
         mysqli_query($link, $query);
@@ -87,51 +97,40 @@ class Film extends Table
 	public $id_distributeur;
 	public $id_genre;
 
+	public $distributeur;
+	public $genre;
+
 	public function __construct()
 	{
 
 	}
 
-/*	VERSION SPECIFIQUE POUR LE FILMS
+// HYDRATE SPECIFIQUE POUR LE FILM AVEC HYDRATION EN CHAINE
 
-	public static function getAll()
+public function hydrate()
+{
+	// recupere les données du film avec getOne
+	$data = static::getOne($this->{static::$primaryKey});
+	// pour chaque donnée, on l'assigne à l'objet
+	foreach ($data as $key => $value)
 	{
-		$link = mysqli_connect('localhost', 'root', '', 'cinema');
-
-		$query = 'select * from films';
-		$res = mysqli_query($link, $query);
-
-		$lines = [];
-		while ($line = mysqli_fetch_assoc($res))
-		{
-			$lines[] = $line;
-		}
-
-		return $lines;
+		$this->$key = $value;
 	}
 
-	public static function getOne($id)
-	{
-		$link = mysqli_connect('localhost', 'root', '', 'cinema');
-
-		$query = 'select * from films where id_film='.$id;
-		$res = mysqli_query($link, $query);
-
-		$line = mysqli_fetch_assoc($res);
-
-		return $line;
+	// Hydrate le distributeur
+	if (isset($this->id_distributeur)) {
+		$this->distributeur = new Distributeur();
+		$this->distributeur->id_distributeur = $this->id_distributeur;
+		$this->distributeur->hydrate();
 	}
-		
-HYDRATE SPECIFIQUE POUR LE FILM
 
-    public function hydrate()
-    {
-        $data = static::getOne($this->{static::$primaryKey});
-        foreach ($data as $key => $value)
-        {
-            $this->$key = $value;
-        }
-    }*/
+	// Hydrate le genre
+	if (isset($this->id_genre)) {
+		$this->genre = new Genre();
+		$this->genre->id_genre = $this->id_genre;
+		$this->genre->hydrate();
+	}
+}
 }
 
 class Genre extends Table
@@ -139,6 +138,7 @@ class Genre extends Table
 	public static $primaryKey = 'id_genre';
 	public static $tableName = 'genres';
 
+	// propriétés de l'objet - évite des dépréciations
 	public $id_genre;
 	public $nom;
 
@@ -148,32 +148,19 @@ class Genre extends Table
 	}
 }
 
-	/*public function save() 
-	{
-		$link = mysqli_connect('localhost', 'root', 'root', 'cinema');
-		$query = '';
-
-		if (isset($this->id_genre))
-		{
-			$query .= 'UPDATE'. $tableName .'SET nom =\''.$this->nom.'\' WHERE'. $primary_key.' = '.$this->id_genre;
-			echo $query.'<br>';
-			$res = mysqli_query($link, $query);
-		}
-		else // sinon on genere une requete INSERT et on recupere l'id auto-incrémenté
-		{
-			$query .= 'INSERT INTO genres (nom) VALUES (\''.$this->nom.'\')';
-			$res = mysqli_query($link, $query);
-			echo $query.'<br>';
-			$pk_val = mysqli_insert_id($link);
-			$this->id_genre = $pk_val;
-		}
-	}
-}*/
-
 class Distributeur extends Table
 {
 	public static $primaryKey = 'id_distributeur';
 	public static $tableName = 'distributeurs';
+
+	// propriétés de l'objet - évite des dépréciations
+	public $id_distributeur;
+	public $nom;
+	public $telephone;
+	public $adresse;
+	public $cpostal;
+	public $ville;
+	public $pays;
 
 	public function __construct()
 	{
@@ -182,9 +169,9 @@ class Distributeur extends Table
 }
 
 
+// CODE DE L'APPLICATION
 
-// code de l'application
-
+// liste de tous les films - homepage
 if (!isset($_GET['page']))
 {
 	echo '<h1>Liste des films du cinéma</h1><br>';
@@ -195,12 +182,13 @@ if (!isset($_GET['page']))
 	}
 
 }
+
+// détails d'un film
 elseif($_GET['page'] == 'film')
 {
 	$film = Film::getOne($_GET['id_film']);
 
 	echo '<h1>Détails du film "'.$film['titre'].'"</h1><br>';
-		
 	echo '<strong>id du film : </strong> '.$film['id_film'].'<br>';
 	echo '<strong>id du genre : </strong> '.$film['id_genre'].'<br>';
 	echo '<strong>id du distributeur : </strong> '.$film['id_distributeur'].'<br>';
@@ -212,6 +200,8 @@ elseif($_GET['page'] == 'film')
 	echo '<strong>année de production : </strong> '.$film['annee_production'].'<br>';
 
 }
+
+// liste de tous les genres
 elseif($_GET['page'] == 'genres')
 {
 	echo '<h1>Liste des genres de films du cinéma</h1><br>';
@@ -221,15 +211,19 @@ elseif($_GET['page'] == 'genres')
 		echo '<a href="?page=genre&id_genre='.$genre['id_genre'].'">'.$genre['nom'].'</a><br>';
 	}
 }
+
+// détails d'un genre
 elseif($_GET['page'] == 'genre')
 {
 	$genre = Genre::getOne($_GET['id_genre']);
 
 	echo '<h1>Détails du genre de film "'.$genre['nom'].'"</h1><br>';
-	echo '<pre>';
-	var_dump($genre);
-	echo '</pre>';
+	echo '<strong>id du genre : </strong> '.$genre['id_genre'].'<br>';
+	echo '<strong>nom du genre : </strong> '.$genre['nom'].'<br>';
+
 }
+
+// test de la fonction save générique
 elseif($_GET['page'] == 'add_genre_raw_code')
 {
 	$genre = new Genre();
@@ -248,24 +242,17 @@ elseif($_GET['page'] == 'add_genre_raw_code')
 	var_dump($genre);
 	echo '</pre>';
 }
+
+// test de la fonction hydrate
 elseif($_GET['page'] == 'hydrate_film')
 {
-	// 1 - rendre GENERIQUE la fonction SAVE
-
-	// 2 - CODER EN SPECIFIQUE pour commencer PUIS en GENERIQUE la fonction HYDRATE
-
 	$film = new Film;
 	$film->id_film = 3571;
 	$film->hydrate();
 
-	//apres hydratation, le cod ci-apres doit afficher toutes les valeurs des champs du films avec l'id 3571
 	echo '<pre>';
 	var_dump($film);
 	echo '</pre>';
 }
 
-
-/*echo '<pre>';
-var_dump($films);
-echo '</pre>';*/
-
+?>
